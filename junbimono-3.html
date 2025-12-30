@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>準備物一覧（スマホ用・サマリー付き）</title>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --ink:#111;
+    --muted:#666;
+    --line:#ddd;
+    --bg:#f4f4f4;
+    --card:#fff;
+    --pill:#f3f3f3;
+  }
+  body{
+    font-family:"BIZ UDPGothic", sans-serif;
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+  }
+  .sheet{
+    width:360px;
+    margin:0 auto;
+    background:var(--card);
+    padding:14px 12px 18px;
+  }
+  .controls{
+    position:sticky; top:0;
+    background:var(--card);
+    padding:10px 12px;
+    border-bottom:1px solid var(--line);
+    display:flex; gap:8px; flex-wrap:wrap;
+    z-index:10;
+  }
+  button{
+    font:inherit;
+    padding:9px 12px;
+    border:1px solid #cfcfcf;
+    background:#fff;
+    border-radius:10px;
+    cursor:pointer;
+  }
+  button.primary{
+    background:#111;
+    color:#fff;
+    border-color:#111;
+  }
+  button.ghost{
+    background:var(--pill);
+    border-color:#d8d8d8;
+  }
+  h1{
+    font-size:18px;
+    margin:10px 0 8px;
+    border-bottom:2px solid #000;
+    padding-bottom:6px;
+  }
+  .label{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:10px;
+  }
+  input[type="text"], textarea, input[type="number"]{
+    width:100%;
+    box-sizing:border-box;
+    padding:10px 8px;
+    font-size:15px;
+    border:1px solid #ccc;
+    border-radius:10px;
+  }
+  textarea{ min-height:90px; resize:vertical; }
+  .spacer{ height:12px; }
+
+  /* セグメント（単一選択） */
+  .seg{
+    display:flex;
+    gap:8px;
+    margin-top:8px;
+    flex-wrap:wrap;
+  }
+  .seg button{
+    background:var(--pill);
+    border:1px solid #d8d8d8;
+    color:#111;
+    padding:8px 12px;
+    border-radius:999px;
+  }
+  .seg button.active{
+    background:#111;
+    color:#fff;
+    border-color:#111;
+  }
+
+  .sectionTitle{
+    margin-top:14px;
+    font-size:14px;
+    font-weight:700;
+  }
+  .hint{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:6px;
+  }
+
+  /* 品番（＋追加） */
+  .models{
+    margin-top:6px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .modelRow{
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .modelRow input{
+    flex:1;
+  }
+  .miniBtn{
+    padding:9px 10px;
+    border-radius:10px;
+    border:1px solid #cfcfcf;
+    background:#fff;
+    white-space:nowrap;
+  }
+
+  /* 印刷用：品番のまとめ表示 */
+  #modelsPrint{
+    margin-top:6px;
+    padding:10px 8px;
+    border:1px solid #000;
+    border-radius:10px;
+    font-size:14px;
+    line-height:1.4;
+    white-space:pre-wrap;
+  }
+
+  /* 印刷用：セグメントのまとめ表示（色／サイズ） */
+  .printValueBox{
+    margin-top:6px;
+    padding:10px 8px;
+    border:1px solid #000;
+    border-radius:10px;
+    font-size:14px;
+    line-height:1.4;
+  }
+
+  /* 準備物（選択UI） */
+  .items{
+    margin-top:8px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .itemRow{
+    display:grid;
+    grid-template-columns: 1fr 86px;
+    gap:8px;
+    align-items:center;
+  }
+  .itemBtn{
+    width:100%;
+    text-align:left;
+    background:var(--pill);
+    border:1px solid #d8d8d8;
+    border-radius:12px;
+    padding:10px 10px;
+    line-height:1.2;
+  }
+  .itemBtn.active{
+    background:#111;
+    color:#fff;
+    border-color:#111;
+  }
+
+  /* 数量：数字専用 */
+  .qty{
+    width:86px;
+    padding:10px 8px;
+    font-size:15px;
+    border:1px solid #ccc;
+    border-radius:12px;
+    text-align:center;
+  }
+  .qty:disabled{
+    background:#f6f6f6;
+    color:#aaa;
+  }
+
+  /* サマリー */
+  .summaryBox{
+    margin-top:10px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px;
+    background:#fff;
+  }
+  .summaryHead{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:8px;
+  }
+  .summaryCount{
+    font-size:12px;
+    color:var(--muted);
+    white-space:nowrap;
+  }
+  .summaryTable{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:8px;
+    font-size:13px;
+  }
+  .summaryTable th, .summaryTable td{
+    border:1px solid var(--line);
+    padding:8px 6px;
+    vertical-align:top;
+  }
+  .summaryTable th{
+    background:#fafafa;
+    text-align:left;
+  }
+  .empty{
+    color:var(--muted);
+    font-size:13px;
+    padding:6px 0 0;
+  }
+
+  /* ★印刷用チェックボックス（□） */
+  .chkBox{
+    display:inline-block;
+    width:15px;
+    height:15px;
+    border:1px solid #000;
+    margin-right:8px;
+    vertical-align:middle;
+  }
+  .chkCell{
+    white-space:nowrap;
+  }
+
+  /* 画面の一番下のPDFボタン */
+  .bottomPrintBtn{
+    width:100%;
+    font-size:16px;
+    padding:12px 14px;
+    border-radius:12px;
+  }
+
+  @media print{
+    .controls{ display:none; }
+    body{ background:#fff; }
+    .sheet{
+      width:210mm;
+      padding:14mm 16mm;
+    }
+    .screenOnly{ display:none !important; }
+    .printOnly{ display:table-cell !important; } /* ★表の列も出したいのでtable-cell */
+
+    #selectArea{ display:none !important; }        /* 選択UIを消す */
+    #summaryArea{ display:block !important; }      /* サマリーを出す */
+    #bottomPrintArea{ display:none !important; }   /* 下のPDFボタンは印刷に不要 */
+
+    /* ★品番：入力欄は印刷で消す（誤読防止） */
+    #modelsWrap{ display:none !important; }
+    #addModelBtn{ display:none !important; }
+
+    /* ★色/サイズ：ボタン群は印刷で消す */
+    #colorSeg{ display:none !important; }
+    #sizeSeg{ display:none !important; }
+
+    .summaryBox{ border:1px solid #000; }
+    .summaryTable th, .summaryTable td{ border:1px solid #000; }
+
+    /* 印刷時：printOnly要素はブロック/テーブルで適切に出す */
+    .printOnlyBlock{ display:block !important; }
+  }
+
+  /* 既定では非表示 */
+  .printOnly{ display:none; }
+  .printOnlyBlock{ display:none; }
+</style>
+</head>
+
+<body>
+
+<div class="controls">
+  <button id="btnReset">リセット</button>
+</div>
+
+<div class="sheet">
+  <h1>準備物一覧（スマホ用）</h1>
+
+  <div class="label">お客様名</div>
+  <input id="custName" type="text" placeholder="◯◯様" />
+
+  <div class="label">住所</div>
+  <input id="custAddr" type="text" placeholder="長浜市〜" />
+
+  <div class="spacer"></div>
+
+  <div class="label">品番</div>
+  <div class="models" id="modelsWrap"></div>
+
+  <div class="hint">
+    <button type="button" class="miniBtn ghost" id="addModelBtn">＋ 品番を追加（最大3）</button>
+  </div>
+
+  <!-- 印刷専用：品番のまとめ表示（入力されたものだけ） -->
+  <div id="modelsPrint" class="printOnlyBlock"></div>
+
+  <div class="spacer"></div>
+
+  <div class="label">化粧カバー色</div>
+  <div class="seg" id="colorSeg">
+    <button type="button" data-value="A">A</button>
+    <button type="button" data-value="W">W</button>
+    <button type="button" data-value="H">H</button>
+    <button type="button" data-value="B">B</button>
+  </div>
+  <!-- 印刷専用：色（選ばれたやつだけ） -->
+  <div id="colorPrint" class="printOnlyBlock printValueBox"></div>
+
+  <div class="label">サイズ</div>
+  <div class="seg" id="sizeSeg">
+    <button type="button" data-value="60">60</button>
+    <button type="button" data-value="80">80</button>
+  </div>
+  <!-- 印刷専用：サイズ（選ばれたやつだけ） -->
+  <div id="sizePrint" class="printOnlyBlock printValueBox"></div>
+
+  <!-- 選択エリア（画面用） -->
+  <div id="selectArea" class="screenOnly">
+    <div class="spacer"></div>
+    <div class="sectionTitle">準備物（押して選択 → 数量入力）</div>
+    <div class="hint">※下に「選択済み一覧」が自動でまとまるよ。</div>
+    <div class="items" id="items"></div>
+  </div>
+
+  <!-- サマリー（画面＆印刷） -->
+  <div id="summaryArea" class="summaryBox">
+    <div class="summaryHead">
+      <div class="sectionTitle" style="margin:0;">選択済み一覧</div>
+      <div class="summaryCount" id="summaryCount">0件</div>
+    </div>
+
+    <div id="summaryEmpty" class="empty">まだ選択がないよ。上で押すとここに出る。</div>
+
+    <table id="summaryTable" class="summaryTable" style="display:none;">
+      <thead>
+        <tr>
+          <th style="width:62%;">準備物</th>
+          <th style="width:18%;">数量</th>
+          <!-- ★印刷時だけ：チェック欄 -->
+          <th class="printOnly" style="width:20%;">チェック</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="spacer"></div>
+
+  <div class="label">その他（自由記載）</div>
+  <textarea id="memo" placeholder="例：設置場所の注意点、追加部材、確認事項など"></textarea>
+
+  <div id="bottomPrintArea">
+    <div class="spacer"></div>
+    <button class="primary bottomPrintBtn" id="btnPrint">PDF保存 / 印刷（選択済み一覧）</button>
+  </div>
+
+  <div class="printOnlyBlock hint" style="margin-top:10px;">（印刷：選択済み一覧のみ）</div>
+</div>
+
+<script>
+/* ====== データ ====== */
+const ITEMS = [
+  "VA線2X2+1.6",
+  "ドレンホース",
+  "断熱ドレン",
+  "2分3分（～5Kまで）",
+  "2分4分（6K～）",
+  "貫通材",
+  "パテ",
+  "和室タテ桟",
+  "トップ（排気有り）",
+  "トップ（排気無し）",
+  "ストレート",
+  "エルボ",
+  "ジャバラ短",
+  "ジャバラ長",
+  "ジョイント",
+  "ホールキャップ",
+  "置台（プラブロ）",
+　"置台（プラブロ-L）",
+  "置台（C-NG）",
+  "置台（C-NG-L）",
+  "置台（C-YG）",
+  "置台（C-YG-L）",
+  "置台（C-KG）",
+  "置台（その他・要確認）",
+  "コンセント工事有り（部材要確認）",
+  "ブレーカー工事有り（部材要確認）"
+];
+
+/* ====== セグメント（単一選択） ====== */
+function setupSingleSelect(segEl, onChange){
+  let current = "";
+  segEl.querySelectorAll("button").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const v = btn.dataset.value;
+      current = (current === v) ? "" : v;
+      segEl.querySelectorAll("button").forEach(b=>b.classList.toggle("active", b.dataset.value === current));
+      segEl.dataset.selected = current;
+      if(typeof onChange === "function") onChange(current);
+    });
+  });
+}
+
+/* 印刷用：色/サイズまとめ表示 */
+function updateSegPrint(){
+  const color = document.getElementById("colorSeg").dataset.selected || "";
+  const size  = document.getElementById("sizeSeg").dataset.selected || "";
+  document.getElementById("colorPrint").textContent = color ? color : "";
+  document.getElementById("sizePrint").textContent  = size ? size : "";
+}
+
+setupSingleSelect(document.getElementById("colorSeg"), updateSegPrint);
+setupSingleSelect(document.getElementById("sizeSeg"), updateSegPrint);
+
+/* ====== 品番（＋追加 最大3） ====== */
+const modelsWrap = document.getElementById("modelsWrap");
+const addModelBtn = document.getElementById("addModelBtn");
+
+function refreshModelCount(){
+  const rows = modelsWrap.querySelectorAll(".modelRow");
+  const n = rows.length;
+  addModelBtn.disabled = n >= 3;
+  addModelBtn.textContent = n >= 3 ? "品番は最大3まで" : "＋ 品番を追加（最大3）";
+  rows.forEach((r, i)=>{
+    const inp = r.querySelector("input");
+    if(i === 0) inp.placeholder = "例：RAS-◯◯◯";
+    else inp.placeholder = `${i+1}台目（任意）`;
+  });
+}
+
+function addModelInput(){
+  const n = modelsWrap.querySelectorAll(".modelRow").length;
+  if(n >= 3) return;
+
+  const row = document.createElement("div");
+  row.className = "modelRow";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.placeholder = n === 0 ? "例：RAS-◯◯◯" : `${n+1}台目（任意）`;
+
+  row.appendChild(input);
+
+  if(n >= 1){
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "miniBtn";
+    del.textContent = "削除";
+    del.addEventListener("click", ()=>{
+      row.remove();
+      refreshModelCount();
+      updateModelsPrint();
+    });
+    row.appendChild(del);
+  }
+
+  modelsWrap.appendChild(row);
+  refreshModelCount();
+}
+
+// 初期は1つ
+addModelInput();
+addModelBtn.addEventListener("click", addModelInput);
+
+/* 印刷用：品番まとめ（入力されたものだけ） */
+function getModelValues(){
+  return Array.from(modelsWrap.querySelectorAll("input"))
+    .map(inp => (inp.value || "").trim())
+    .filter(v => v.length > 0);
+}
+function updateModelsPrint(){
+  const modelsPrint = document.getElementById("modelsPrint");
+  const vals = getModelValues();
+  modelsPrint.textContent = vals.length ? vals.join("\n") : "";
+}
+
+/* ====== 準備物UI生成（状態管理） ====== */
+const itemsWrap = document.getElementById("items");
+const state = new Map(); // name -> {selected:boolean, qty:string}
+
+function makeRow(name){
+  state.set(name, { selected:false, qty:"" });
+
+  const row = document.createElement("div");
+  row.className = "itemRow";
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "itemBtn";
+  btn.textContent = name;
+
+  const qty = document.createElement("input");
+  qty.type = "number";
+  qty.className = "qty";
+  qty.placeholder = "数量";
+  qty.disabled = true;
+  qty.inputMode = "numeric";
+  qty.min = "0";
+  qty.step = "1";
+
+  function setSelected(on){
+    btn.classList.toggle("active", on);
+    qty.disabled = !on;
+    const s = state.get(name);
+    s.selected = on;
+    if(!on){
+      s.qty = "";
+      qty.value = "";
+    }
+    renderSummary();
+  }
+
+  btn.addEventListener("click", ()=>{
+    const on = !btn.classList.contains("active");
+    setSelected(on);
+    if(on) qty.focus();
+  });
+
+  function sanitizeNumber(){
+    let v = String(qty.value ?? "");
+    v = v.replace(/[^\d]/g, "");
+    if(v === ""){
+      qty.value = "";
+      state.get(name).qty = "";
+      renderSummary();
+      return;
+    }
+    qty.value = v;
+    state.get(name).qty = v;
+    renderSummary();
+  }
+  qty.addEventListener("input", sanitizeNumber);
+  qty.addEventListener("blur", sanitizeNumber);
+
+  row.appendChild(btn);
+  row.appendChild(qty);
+  return row;
+}
+ITEMS.forEach(n => itemsWrap.appendChild(makeRow(n)));
+
+/* ====== サマリー描画 ====== */
+const summaryCountEl = document.getElementById("summaryCount");
+const summaryEmptyEl = document.getElementById("summaryEmpty");
+const summaryTableEl = document.getElementById("summaryTable");
+const summaryTbodyEl = summaryTableEl.querySelector("tbody");
+
+function renderSummary(){
+  const selected = ITEMS
+    .map(name => ({ name, ...state.get(name) }))
+    .filter(x => x.selected);
+
+  summaryCountEl.textContent = `${selected.length}件`;
+
+  summaryTbodyEl.innerHTML = "";
+  selected.forEach(x=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(x.name)}</td>
+      <td>${escapeHtml(x.qty || "")}</td>
+      <td class="printOnly chkCell">
+        <span class="chkBox"></span><span class="chkBox"></span>
+      </td>
+    `;
+    summaryTbodyEl.appendChild(tr);
+  });
+
+  const has = selected.length > 0;
+  summaryEmptyEl.style.display = has ? "none" : "block";
+  summaryTableEl.style.display = has ? "table" : "none";
+}
+
+function escapeHtml(str){
+  return String(str)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+renderSummary();
+
+/* ====== 印刷 ====== */
+document.getElementById("btnPrint").addEventListener("click", ()=>{
+  updateModelsPrint();  // 品番まとめ
+  updateSegPrint();     // 色/サイズまとめ
+  window.print();
+});
+
+// 入力中も追従（印刷用が常に最新）
+modelsWrap.addEventListener("input", updateModelsPrint);
+updateModelsPrint();
+updateSegPrint();
+
+/* ====== リセット ====== */
+document.getElementById("btnReset").addEventListener("click", ()=>{
+  document.getElementById("custName").value = "";
+  document.getElementById("custAddr").value = "";
+  document.getElementById("memo").value = "";
+
+  // 品番：1つだけ残す
+  modelsWrap.innerHTML = "";
+  addModelInput();
+
+  // セグ解除
+  ["colorSeg","sizeSeg"].forEach(id=>{
+    const el = document.getElementById(id);
+    el.dataset.selected = "";
+    el.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
+  });
+
+  // 準備物オフ
+  document.querySelectorAll(".itemRow").forEach(row=>{
+    const btn = row.querySelector(".itemBtn");
+    const qty = row.querySelector(".qty");
+    const name = btn.textContent;
+
+    btn.classList.remove("active");
+    qty.value = "";
+    qty.disabled = true;
+
+    const s = state.get(name);
+    if(s){
+      s.selected = false;
+      s.qty = "";
+    }
+  });
+
+  renderSummary();
+  updateModelsPrint();
+  updateSegPrint();
+  window.scrollTo({top:0, behavior:"smooth"});
+});
+</script>
+
+</body>
+</html>
+
